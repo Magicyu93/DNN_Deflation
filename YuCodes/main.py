@@ -115,67 +115,27 @@ while k < n_epoch:
 
 
     for i_update in range(n_update_each_batch):
-        # # compute the deflation term
-        # deflation_A = 1 / (torch.sum((net_A(tensor_x_deflation) - A_s)**2)/tensor_x_deflation.shape[0])**(p/2)
-        # deflation_S = 1 / (torch.sum((net_S(tensor_x_deflation) - S_s)**2)/tensor_x_deflation.shape[0])**(p/2)
-        # deflation = 1/(1/deflation_A + 1/deflation_S)
-        #
-        # # compute the loss
-        # residual_sq1 = 1/N_inside_train * torch.sum(res(net_A, net_S, tensor_x1_train)**2)
-        #
-        # residual_bd_A = torch.sum(res_bd(net_A, tensor_x2_train)**2)
-        # residual_bd_S = torch.sum(res_bd(net_S, tensor_x2_train)**2)
-        # residual_sq2 = residual_bd_A + residual_bd_S
-        #
-        # loss = (deflation + alpha[k]) * (residual_sq1 + lambda_term * residual_sq2)
-        # # loss = residual_sq1 + lambda_term * residual_sq2      # used for computing the homogeneous solution
-        #
-        # # update the network
-        # optimizer_A.zero_grad()
-        # optimizer_S.zero_grad()
-        # loss.backward(retain_graph=not flag_compute_loss_each_epoch)
-        # optimizer_A.step()
-        # optimizer_S.step()
-
-        # trying another way of doing optimization
-        # updating based on A equation loss
-        deflation_A = 1 / (torch.sum((net_A(tensor_x_deflation) - A_s)**2)/tensor_x_deflation.shape[0])**(p/2)
-        residual_sq1_A = 1/N_inside_train * torch.sum(res1(net_A, net_S, tensor_x1_train)**2)
-        residual_bd_A = torch.sum(res_bd(net_A, tensor_x2_train) ** 2)
-        loss1 = (deflation_A + alpha[k]) * (residual_sq1_A + lambda_term * residual_bd_A)
-
-        optimizer_A.zero_grad()
-        optimizer_S.zero_grad()
-        loss1.backward(retain_graph=not flag_compute_loss_each_epoch)
-        optimizer_A.step()
-        optimizer_S.step()
-
-        # updating based on S equation loss
-        deflation_S = 1 / (torch.sum((net_S(tensor_x_deflation) - S_s) ** 2) / tensor_x_deflation.shape[0]) ** (p / 2)
-        residual_sq1_S = 1 / N_inside_train * torch.sum(res2(net_A, net_S, tensor_x1_train) ** 2)
-        residual_bd_S = torch.sum(res_bd(net_S, tensor_x2_train) ** 2)
-        loss2 = (deflation_S + alpha[k]) * (residual_sq1_S + lambda_term * residual_bd_S)
-        optimizer_A.zero_grad()
-        optimizer_S.zero_grad()
-        loss2.backward(retain_graph=not flag_compute_loss_each_epoch)
-        optimizer_A.step()
-        optimizer_S.step()
-
+        # compute the deflation term
         deflation_A = 1 / (torch.sum((net_A(tensor_x_deflation) - A_s)**2)/tensor_x_deflation.shape[0])**(p/2)
         deflation_S = 1 / (torch.sum((net_S(tensor_x_deflation) - S_s)**2)/tensor_x_deflation.shape[0])**(p/2)
         deflation = 1/(1/deflation_A + 1/deflation_S)
-
+        
         # compute the loss
         residual_sq1 = 1/N_inside_train * torch.sum(res(net_A, net_S, tensor_x1_train)**2)
-
+        
         residual_bd_A = torch.sum(res_bd(net_A, tensor_x2_train)**2)
         residual_bd_S = torch.sum(res_bd(net_S, tensor_x2_train)**2)
         residual_sq2 = residual_bd_A + residual_bd_S
-
+        
         loss = (deflation + alpha[k]) * (residual_sq1 + lambda_term * residual_sq2)
         # loss = residual_sq1 + lambda_term * residual_sq2      # used for computing the homogeneous solution
-
-
+        
+        # update the network
+        optimizer_A.zero_grad()
+        optimizer_S.zero_grad()
+        loss.backward(retain_graph=not flag_compute_loss_each_epoch)
+        optimizer_A.step()
+        optimizer_S.step()
 
     # save loss and l2 error
     losssq[k] = loss.item()
