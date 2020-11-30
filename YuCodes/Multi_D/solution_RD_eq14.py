@@ -1,7 +1,8 @@
 import torch
 from numpy import array, zeros
 
-torch.set_default_tensor_type('torch.DoubleTensor')
+torch.set_default_tensor_type('torch.cuda.DoubleTensor')
+device = torch.device('cuda')
 
 h = 0.001
 
@@ -20,10 +21,10 @@ mu = 1
 
 # output should have the same dimension as the input
 def res1(net_A, net_S, tensor_x_batch):
-    laplace_a = torch.zeros(tensor_x_batch.shape[0], )
+    laplace_a = torch.zeros(tensor_x_batch.shape[0], device = device)
 
     for i in range(tensor_x_batch.shape[1]):
-        ei = torch.zeros(tensor_x_batch.shape)
+        ei = torch.zeros(tensor_x_batch.shape, device = device)
         ei[:, i] = 1
         laplace_a = laplace_a + 1/scale/scale *(net_A(tensor_x_batch+h*ei) - 2*net_A(tensor_x_batch) + net_A(tensor_x_batch-h*ei))/h/h
 
@@ -35,10 +36,10 @@ def res1(net_A, net_S, tensor_x_batch):
 
 
 def res2(net_A, net_S, tensor_x_batch):
-    laplace_s = torch.zeros(tensor_x_batch.shape[0], )
+    laplace_s = torch.zeros(tensor_x_batch.shape[0], device = device)
 
     for i in range(tensor_x_batch.shape[1]):
-        ei = torch.zeros(tensor_x_batch.shape)
+        ei = torch.zeros(tensor_x_batch.shape, device = device)
         ei[:, i] = 1
         laplace_s = laplace_s + 1/scale/scale * (net_S(tensor_x_batch+h*ei)
                                                  - 2*net_S(tensor_x_batch) + net_S(tensor_x_batch-h*ei))/h/h
@@ -62,13 +63,13 @@ def res_bd(model, tensor_x_batch):
     dim = tensor_x_batch.shape[1]
     n_each_face = int(tensor_x_batch.shape[0] / dim / 2)
 
-    res_bd = torch.zeros(tensor_x_batch.shape)
+    res_bd = torch.zeros(tensor_x_batch.shape, device = device)
 
     for i in range(dim):
         count_start = i * 2 * n_each_face
         count_end = (i + 1) * 2 * n_each_face - 1
 
-        ei = torch.zeros(tensor_x_batch[count_start:count_end, :].shape)
+        ei = torch.zeros(tensor_x_batch[count_start:count_end, :].shape, device = device)
         ei[:, i] = 1
 
         res_bd[count_start:count_end, i] = 1/scale * (model(tensor_x_batch[count_start:count_end, :] + h*ei)

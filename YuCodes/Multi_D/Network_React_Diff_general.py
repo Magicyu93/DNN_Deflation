@@ -3,9 +3,7 @@ import torch
 from torch import tanh, squeeze, sin, sigmoid, autograd
 from torch.nn.functional import relu
 
-# torch.set_default_tensor_type('torch.cuda.DoubleTensor')
-torch.set_default_tensor_type('torch.DoubleTensor')
-
+torch.set_default_tensor_type('torch.cuda.DoubleTensor')
 
 # a 2-layer feed forward network for the PDE solution
 class Network(torch.nn.Module):

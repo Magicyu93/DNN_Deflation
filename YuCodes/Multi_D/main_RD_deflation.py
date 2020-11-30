@@ -12,7 +12,8 @@ import time
 
 from solution_RD_eq14 import res1, res2, res, res_bd, steady_state_sol, domain_shape, domain_parameter, time_dependent_type
 
-torch.set_default_tensor_type('torch.DoubleTensor')
+torch.set_default_tensor_type('torch.cuda.DoubleTensor')
+device = torch.device('cuda')
 
 # Set parameters #########################################
 method = 'B'        # choose methods: B(basic), S(SelectNet), RS (reversed SelectNet)
@@ -57,9 +58,9 @@ flag_output_results = True
 
 # Depending parameters #########################################
 net_A = network_file.Network(d, m, activation_type=activation, boundary_control_type=boundary_control,
-                             initial_constant=initial_constant)
+                             initial_constant=initial_constant).cuda()
 net_S = network_file.Network(d, m, activation_type=activation, boundary_control_type=boundary_control,
-                             initial_constant=initial_constant)
+                             initial_constant=initial_constant).cuda()
 
 flag_IBC_in_loss = True
 N_each_face_train = 1000
@@ -75,12 +76,12 @@ resseq2 = zeros((n_epoch, ))
 
 # giving the x_plot, grid_x, grid_y
 N_plot_each_dim = 101
-x_plot = generate_x_plot(domain_intervals, N_plot_each_dim)
-grid_x, grid_y = np.meshgrid(np.linspace(domain_intervals[0, 0], domain_intervals[0, 1], N_plot_each_dim),
-                             np.linspace(domain_intervals[1, 0], domain_intervals[1, 1], N_plot_each_dim))
-
+x_plot = generate_x_plot(domain_intervals, N_plot_each_dim).cuda()
 a_plot = np.reshape(net_A(torch.tensor(x_plot)).detach().numpy(), (N_plot_each_dim, N_plot_each_dim))
 s_plot = np.reshape(net_S(torch.tensor(x_plot)).detach().numpy(), (N_plot_each_dim, N_plot_each_dim))
+
+grid_x, grid_y = np.meshgrid(np.linspace(domain_intervals[0, 0], domain_intervals[0, 1], N_plot_each_dim),
+                             np.linspace(domain_intervals[1, 0], domain_intervals[1, 1], N_plot_each_dim))
 
 fig_a, ax_a = plt.subplots()
 contour_a = ax_a.contourf(grid_x, grid_y, a_plot)
@@ -100,20 +101,20 @@ k = 0
 while k < n_epoch:
     # sample the training points
     x1_train = generate_uniform_points_in_cube(domain_intervals, N_inside_train)
-    tensor_x1_train = Tensor(x1_train)
+    tensor_x1_train = Tensor(x1_train).cuda()
     tensor_x1_train.requires_grad = False
 
     x1_test = generate_uniform_points_in_cube(domain_intervals, N_inside_test)
-    tensor_x1_test = Tensor(x1_test)
+    tensor_x1_test = Tensor(x1_test).cuda()
     tensor_x1_test.requires_grad = False
 
     x_deflation = generate_uniform_points_in_cube(domain_intervals, N_pts_deflation)
-    tensor_x_deflation = Tensor(x_deflation)
+    tensor_x_deflation = Tensor(x_deflation).cuda()
     tensor_x_deflation.requires_grad = False
 
     if flag_IBC_in_loss:
         x2_train = generate_uniform_points_on_cube(domain_intervals, N_each_face_train)
-        tensor_x2_train = Tensor(x2_train)
+        tensor_x2_train = Tensor(x2_train).cuda()
         tensor_x2_train.requires_grad = False
 
     # set learning rate
@@ -130,7 +131,7 @@ while k < n_epoch:
         # deflation = deflation_A + deflation_S
 
         # compute the loss
-        residual_sq1 = 1 / N_inside_train * torch.sum(res(net_A, net_S, tensor_x1_train) ** 2)
+        residual_sq1 = 1/N_inside_train * torch.sum(res(net_A, net_S, tensor_x1_train) ** 2)
 
         residual_bd_A = 1/N_each_face_train * torch.sum(res_bd(net_A, tensor_x2_train) ** 2)
         residual_bd_S = 1/N_each_face_train * torch.sum(res_bd(net_S, tensor_x2_train) ** 2)
@@ -228,3 +229,6 @@ if flag_output_results == True:
     f = open(filename, 'wb')
     pickle.dump(data, f)
     f.close()
+
+# empty the GPU memory 
+torch.cuda.empty_cache()
