@@ -8,6 +8,18 @@ from torch.nn.functional import relu
 torch.set_default_tensor_type('torch.DoubleTensor')
 
 
+# Define the new mixed activation mix function
+def mix(tensor_linear_out):
+    m = tensor_linear_out.shape[1]
+    pi = torch.Tensor([math.pi])
+    break_point = m - 20
+    slice0 = relu(tensor_linear_out[:, 0:break_point]**3)
+    slice1 = sin(pi * torch.tensor(range(1, m - break_point + 1)) * tensor_linear_out[:, break_point:])
+
+    out = torch.cat((slice0, slice1), dim = 1)
+    return out
+
+
 # a 2-layer feed forward network for the PDE solution
 class Network(torch.nn.Module):
     def __init__(self, d, m, activation_type='ReLU', boundary_control_type='none', initial_constant='none', structure_probing_num=0):
@@ -27,6 +39,8 @@ class Network(torch.nn.Module):
             self.activation = lambda x: tanh(x)
         elif activation_type == 'sin':
             self.activation = lambda x: sin(x)
+        elif activation_type == 'mixed':
+            self.activation = lambda x: mix(x)
 
         self.boundary_control_type = boundary_control_type
 
@@ -45,7 +59,6 @@ class Network(torch.nn.Module):
         else:
             self.c.requires_grad = True
             # self.c[structure_probing_num - 1, ] = torch.rand(1)
-
 
 
     def forward(self, tensor_x_batch):
@@ -68,6 +81,7 @@ class Network(torch.nn.Module):
                 for i in range(self.structure_probing_num):
                     temp = temp + self.c[i, ] * cos((i + 1) * pi * tensor_x_batch[:, d])
                 probing = probing * temp
+
             y = y + probing
 
         return y
