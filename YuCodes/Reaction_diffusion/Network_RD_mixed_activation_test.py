@@ -4,14 +4,14 @@ import numpy as  np
 from numpy import array, arange, zeros, sum, sqrt, linspace, ones, absolute, meshgrid
 from useful_tools import generate_uniform_points_in_cube, generate_uniform_points_on_cube,\
     generate_learning_rates, generate_deflation_alpha, generate_x_plot, generate_learning_rates_stage
-import Network_RD_mixed_actvitation as network_file
+import Network_React_Diff_general as network_file
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import plot, show, clf, pause, subplot, xlim, semilogy, contourf
 import pickle
 import time
 
 from solution_RD_eq8 import res1, res2, res, res_bd, steady_state_sol, domain_shape, domain_parameter, \
-    time_dependent_type, sol_plot, res_bd_1d
+    time_dependent_type, sol_plot
 
 torch.set_default_tensor_type('torch.DoubleTensor')
 
